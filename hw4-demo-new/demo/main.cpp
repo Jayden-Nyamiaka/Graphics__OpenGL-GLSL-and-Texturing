@@ -243,10 +243,24 @@ static void motion(int x, int y) {
    glutPostRedisplay();
 }
 
+void usage(string program_name) {
+    cerr << "usage: " << program_name << " xres yres\n";
+    exit(1);
+}
+
 int main(int argc, char *argv[]) {
    glutInit(&argc, argv);
    
-   glutInitWindowSize(atoi(argv[1]), atoi(argv[2]));
+   if (argc != 3) {
+      usage(argv[0]);
+   }
+   int xres = atoi(argv[1]);
+   int yres = atoi(argv[2]);
+   if (xres <= 0 || yres <= 0) {
+      usage(argv[0]);
+   }
+
+   glutInitWindowSize(xres, yres);
    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
    glutCreateWindow("GLSL test");
 

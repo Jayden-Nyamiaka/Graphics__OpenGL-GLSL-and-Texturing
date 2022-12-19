@@ -13,7 +13,7 @@ glslRenderer: $(SOURCES)
 
 .PHONY: run
 run:
-	./$(EXENAME)
+	./$(EXENAME) 800 800
 
 .PHONY: clean
 clean:
