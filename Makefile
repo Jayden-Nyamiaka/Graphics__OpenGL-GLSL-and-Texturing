@@ -10,6 +10,6 @@ opengl: opengl.cpp
 	$(CC) $(FLAGS) opengl $(INCLUDE) $(LIBDIR) opengl.cpp $(LIBS)
 
 clean:
-	rm -f *.o opengl opengl_matrix demo
+	rm -f *.o opengl
 
 .PHONY: all clean
