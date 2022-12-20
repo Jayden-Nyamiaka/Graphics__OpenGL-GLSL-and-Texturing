@@ -87,6 +87,7 @@ void reshape(int width, int height);
 void display(void);
 
 void init_lights();
+void set_shading_model();
 void set_lights();
 void draw_objects();
 
@@ -242,9 +243,6 @@ Quarternion getIdentityQuarternion(void) {
  */
 struct Object
 {
-    /* See the note above and the comments in the 'draw_objects' and
-     * 'create_cubes' functions for details about these buffer vectors.
-     */
     vector<Triple> vertex_buffer;
     vector<Triple> normal_buffer;
     
@@ -313,6 +311,16 @@ bool wireframe_mode = false;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+/* The following parameters control different renderings through GLSL
+*/
+
+// 0: Gouraud   /   1: Phong   /   2: Texture
+int mode;
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 /* The following function prototypes are for helper functions that parse the given 
  * format file to extract all the scene data and populate our map of objects.
  *
@@ -359,22 +367,9 @@ void init(string filename)
     last_rotation = getIdentityQuarternion();
     curr_rotation = getIdentityQuarternion();
 
-    /* The following line of code tells OpenGL to use "smooth shading" (aka
-     * Gouraud shading) when rendering.
-     *
-     * Yes. This is actually all you need to do to use Gouraud shading in
-     * OpenGL (besides providing OpenGL the vertices and normals to render).
-     * Short and sweet, right?
-     *
-     * If you wanted to tell OpenGL to use flat shading at any point, then you
-     * would use the following line:
-     
-       glShadeModel(GL_FLAT);
-     
-     * Phong shading unfortunately requires GLSL, so it will be covered in a
-     * later demo.
-     */
-    glShadeModel(GL_SMOOTH);
+    /* Sets shading model to either Gouraud Shading, Phong Shading, or Texture Mapping 
+     * Equivalent to readShaders() in the Demo. */
+    set_shading_model();
     
     /* The next line of code tells OpenGL to use "culling" when rendering. The
      * line right after it tells OpenGL that the particular "culling" technique
@@ -482,6 +477,150 @@ void init(string filename)
      * the code more organized.
      */
     init_lights();
+}
+
+static void set_shading_model() {
+    // Gouraud Shading can easily be set bc its the default shading model for OpenGL 
+    if (mode == 0) {
+        /* The following line of code tells OpenGL to use "smooth shading" (aka
+        * Gouraud shading) when rendering.
+        *
+        * Yes. This is actually all you need to do to use Gouraud shading in
+        * OpenGL (besides providing OpenGL the vertices and normals to render).
+        * Short and sweet, right?
+        *
+        * If you wanted to tell OpenGL to use flat shading at any point, then you
+        * would use the following line:
+        
+        glShadeModel(GL_FLAT);
+        
+        * Phong shading unfortunately requires GLSL, so it will be covered in a
+        * later demo.
+        */
+        glShadeModel(GL_SMOOTH);
+        return;
+    }
+    
+    // Selects the shaders based on the mode (either Phong Shading or Texture Mapping)
+    string vertProgramFilename, fragProgramFilename;
+    if (mode == 1) {
+        vertProgramFilename = "phongVertexProgram.glsl";
+        fragProgramFilename = "phongFragmentProgram.glsl";
+    } else {
+        vertProgramFilename = "textureVertexProgram.glsl";
+        fragProgramFilename = "textureFragmentProgram.glsl";
+    }
+
+
+    // Reads the Source Code for the Shaders into vertProgramCode and fragProgramCode
+    string vertProgramCode, fragProgramCode;
+
+    ifstream vertProgFile(vertProgramFilename.c_str());
+    if (! vertProgFile)
+        cerr << "Error opening vertex shader program\n";
+
+    ifstream fragProgFile(fragProgramFilename.c_str());
+    if (! fragProgFile)
+        cerr << "Error opening fragment shader program\n";
+
+    getline(vertProgFile, vertProgramCode, '\0');
+    const char* vertShaderSource = vertProgramCode.c_str();
+
+    getline(fragProgFile, fragProgramCode, '\0');
+    const char* fragShaderSource = fragProgramCode.c_str();
+
+
+    /* INITIALIZES SHADERS */
+    GLenum vertShader, fragShader
+
+    // Creates, Sources, and Compiles the Vertex Shader
+    vertShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertShader, 1, &vertShaderSource, NULL);
+    glCompileShader(vertShader);
+    
+    // Provides Error Checking and Output in case the Vertex Shader didn't Compile
+    GLint isCompiled = 0;
+    glGetShaderiv(vertShader, GL_COMPILE_STATUS, &isCompiled);
+    if(isCompiled == GL_FALSE)
+    {
+        GLint maxLength = 0;
+        glGetShaderiv(vertShader, GL_INFO_LOG_LENGTH, &maxLength);
+        
+        // The maxLength includes the NULL character
+        std::vector<GLchar> errorLog(maxLength);
+        glGetShaderInfoLog(vertShader, maxLength, &maxLength, &errorLog[0]);
+        
+        // Provide the infolog in whatever manor you deem best.
+        // Exit with failure.
+        for (int i = 0; i < errorLog.size(); i++)
+            cout << errorLog[i];
+        glDeleteShader(vertShader); // Don't leak the shader.
+        return;
+   }
+
+    // Creates, Sources, and Compiles the Fragment Shader
+    fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragShader, 1, &fragShaderSource, NULL);
+    glCompileShader(fragShader);
+
+    // Provides Error Checking and Output in case the Fragment Shader didn't Compile
+    isCompiled = 0;
+    glGetShaderiv(fragShader, GL_COMPILE_STATUS, &isCompiled);
+    if(isCompiled == GL_FALSE)
+    {
+            GLint maxLength = 0;
+            glGetShaderiv(fragShader, GL_INFO_LOG_LENGTH, &maxLength);
+            
+            // The maxLength includes the NULL character
+            std::vector<GLchar> errorLog(maxLength);
+            glGetShaderInfoLog(fragShader, maxLength, &maxLength, &errorLog[0]);
+            
+            // Provide the infolog in whatever manor you deem best.
+            // Exit with failure.
+            for (int i = 0; i < errorLog.size(); i++)
+                cout << errorLog[i];
+            glDeleteShader(fragShader); // Don't leak the shader.
+            return;
+    }
+    
+    
+    // Creates the Shader Program and attaches the Vertex and Fragment Shaders
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertShader);
+    glAttachShader(shaderProgram, fragShader);
+    glLinkProgram(shaderProgram);
+
+
+
+
+
+
+    // DELETE LATER
+    cerr << "Enabling fragment program: " << gluErrorString(glGetError()) << endl;
+    // Outputs Error Info Log for the Shader Program if an error has occurred
+    glGetProgramInfoLog(shaderProgram, 1024, &error_blah, error_buffer);
+    cerr << error_buffer;
+
+    // Tells OpenGL to use our Shader Program
+    cerr << "Enabling program object" << endl;
+    glUseProgram(shaderProgram);
+
+    /* TEXTURE STUFF - WE"LL DO LATER */
+    // TODO: TEXTURE STUFF
+    /*
+    leafUniformPos = glGetUniformLocation(shaderProgram, "leaf");
+    skyUniformPos = glGetUniformLocation(shaderProgram, "sky");
+    tUniformPos = glGetUniformLocation(shaderProgram, "t");
+    toggleUniformPos = glGetUniformLocation(shaderProgram, "toggle");
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, skyTex);
+    glUniform1i(skyUniformPos, 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, leafTex);
+    glUniform1i(leafUniformPos, 1);
+    */
 }
 
 /* 'reshape' function:
@@ -1580,9 +1719,9 @@ void parseFormatFile(string filename)
 }
 
 
-void usage(void) {
-    cerr << "Enter input in the form: scene_description_file.txt xres yres\n\t"
-            "xres, yres must be positive integers\n";
+void usage(string program_name) {
+    cerr << "usage: \n\t" << program_name << " scene_description_file.txt xres yres mode\n\t"
+            "OR\n\t" << program_name << " color_texture.png normal_map.png\n";
     exit(1);
 }
 
@@ -1596,14 +1735,21 @@ int main(int argc, char* argv[])
     /* Checks that the user inputted the right parameters into the command line
      * and stores xres, yres, and filename to their respective fields
      */
-    if (argc != 4) {
-        usage();
+    if (argc != 5 && argc != 3) {
+        usage(argv[0]);
     }
-    int xres = stoi(argv[2]);
-    int yres = stoi(argv[3]);
-    if (xres <= 0 || yres <= 0) {
-        usage();
+
+    if (argc == 3) {
+        mode = 2;
+    } else {
+        int xres = stoi(argv[2]);
+        int yres = stoi(argv[3]);
+        mode = stoi(argv[4]);
+        if (xres <= 0 || yres <= 0 || (mode != 0 && mode != 1)) {
+            usage(argv[0]);
+        }
     }
+    
 
     /* 'glutInit' intializes the GLUT (Graphics Library Utility Toolkit) library.
      * This is necessary, since a lot of the functions we used above and below
@@ -1628,7 +1774,7 @@ int main(int argc, char* argv[])
     glutInitWindowPosition(0, 0);
     /* The following line tells OpenGL to name the program window "Test".
      */
-    glutCreateWindow("Assignment 3 - Open GL");
+    glutCreateWindow("Assignment 4 - Open GL");
     
     /* Call our 'init' function...
      */
