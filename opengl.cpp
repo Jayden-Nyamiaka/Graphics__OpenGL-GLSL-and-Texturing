@@ -490,6 +490,9 @@ void init(string filename)
      * the code more organized.
      */
     init_lights();
+
+    cerr << "Create new Program\n";
+    shaderProgram = glCreateProgram();
 }
 
 void set_shading_model() {
