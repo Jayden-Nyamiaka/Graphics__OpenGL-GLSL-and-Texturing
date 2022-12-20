@@ -6,7 +6,7 @@
           "type": "cppdbg",
           "request": "launch",
           "program": "${workspaceFolder}/opengl",
-          "args": ["data/scene_armadillo.txt", "800", "800", "0"],
+          "args": ["data/scene_bunny1.txt", "800", "800", "1"],
           "stopAtEntry": false,
           "cwd": "${workspaceFolder}",
           "environment": [],

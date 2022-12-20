@@ -71,6 +71,12 @@
 using Eigen::Vector3f;
 using Eigen::Matrix4f;
 
+/* Libraries needed for GLSL */
+#define GL_GLEXT_PROTOTYPES 1
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glut.h>
+
 using namespace std;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -293,11 +299,10 @@ Quarternion curr_rotation;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-/* Variables that track the shader programs (if overriding default shader)
+/* Variable that tracks the shader program (if overriding default shader)
  * Not used during Gouraud Shading - default shader uses Gouraud Shading 
  */
 GLenum shaderProgram;
-GLenum vertShader, fragShader;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -539,9 +544,16 @@ void set_shading_model() {
 
 
     /* INITIALIZES SHADERS */
+    GLenum vertShader, fragShader;
+    shaderProgram = glCreateProgram();
+    cerr << shaderProgram << endl;
+    cerr << "Create new Program\n";
+
+
 
     // Creates, Sources, and Compiles the Vertex Shader
     vertShader = glCreateShader(GL_VERTEX_SHADER);
+    cerr << "Create new Shader\n";
     glShaderSource(vertShader, 1, &vertShaderSource, NULL);
     glCompileShader(vertShader);
     
@@ -590,8 +602,7 @@ void set_shading_model() {
             return;
     }
     
-    // Creates the Shader Program and attaches the Vertex and Fragment Shaders
-    shaderProgram = glCreateProgram();
+    // Creates the Shader Program, Attaches the Shaders, and Links it for use
     glAttachShader(shaderProgram, vertShader);
     glAttachShader(shaderProgram, fragShader);
     glLinkProgram(shaderProgram);
