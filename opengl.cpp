@@ -293,6 +293,14 @@ Quarternion curr_rotation;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+/* Variables that track the shader programs (if overriding default shader)
+ * Not used during Gouraud Shading - default shader uses Gouraud Shading 
+ */
+GLenum shaderProgram;
+GLenum vertShader, fragShader;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 /* The following are parameters for creating an interactive first-person camera
  * view of the scene. The variables will make more sense when explained in
  * context, so you should just look at the 'mousePressed', 'mouseMoved', and
@@ -479,7 +487,7 @@ void init(string filename)
     init_lights();
 }
 
-static void set_shading_model() {
+void set_shading_model() {
     // Gouraud Shading can easily be set bc its the default shading model for OpenGL 
     if (mode == 0) {
         /* The following line of code tells OpenGL to use "smooth shading" (aka
@@ -531,7 +539,6 @@ static void set_shading_model() {
 
 
     /* INITIALIZES SHADERS */
-    GLenum vertShader, fragShader
 
     // Creates, Sources, and Compiles the Vertex Shader
     vertShader = glCreateShader(GL_VERTEX_SHADER);
@@ -583,7 +590,6 @@ static void set_shading_model() {
             return;
     }
     
-    
     // Creates the Shader Program and attaches the Vertex and Fragment Shaders
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertShader);
@@ -598,6 +604,8 @@ static void set_shading_model() {
     // DELETE LATER
     cerr << "Enabling fragment program: " << gluErrorString(glGetError()) << endl;
     // Outputs Error Info Log for the Shader Program if an error has occurred
+    char error_buffer[1024];
+    GLsizei error_blah;
     glGetProgramInfoLog(shaderProgram, 1024, &error_blah, error_buffer);
     cerr << error_buffer;
 
@@ -1739,11 +1747,14 @@ int main(int argc, char* argv[])
         usage(argv[0]);
     }
 
+    int xres, yres;
     if (argc == 3) {
+        xres = 800;
+        yres = 800;
         mode = 2;
     } else {
-        int xres = stoi(argv[2]);
-        int yres = stoi(argv[3]);
+        xres = stoi(argv[2]);
+        yres = stoi(argv[3]);
         mode = stoi(argv[4]);
         if (xres <= 0 || yres <= 0 || (mode != 0 && mode != 1)) {
             usage(argv[0]);
