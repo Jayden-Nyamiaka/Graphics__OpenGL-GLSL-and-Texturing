@@ -40,8 +40,7 @@
 /* The following 2 headers contain all the main functions, data structures, and
  * variables that allow for OpenGL development.
  */
-#include <GL/glew.h>
-#include <GL/glut.h>
+//#include <GL/glew.h>
 
 /* You will almost always want to include the math library. For those that do
  * not know, the '_USE_MATH_DEFINES' line allows you to use the syntax 'M_PI'
@@ -56,6 +55,7 @@
 #define _USE_MATH_DEFINES
 
 /* Standard libraries that are just generally useful. */
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 
@@ -490,9 +490,6 @@ void init(string filename)
      * the code more organized.
      */
     init_lights();
-
-    cerr << "Create new Program\n";
-    shaderProgram = glCreateProgram();
 }
 
 void set_shading_model() {
@@ -548,15 +545,9 @@ void set_shading_model() {
 
     /* INITIALIZES SHADERS */
     GLenum vertShader, fragShader;
-    shaderProgram = glCreateProgram();
-    cerr << shaderProgram << endl;
-    cerr << "Create new Program\n";
-
-
 
     // Creates, Sources, and Compiles the Vertex Shader
     vertShader = glCreateShader(GL_VERTEX_SHADER);
-    cerr << "Create new Shader\n";
     glShaderSource(vertShader, 1, &vertShaderSource, NULL);
     glCompileShader(vertShader);
     
@@ -579,6 +570,7 @@ void set_shading_model() {
         glDeleteShader(vertShader); // Don't leak the shader.
         return;
    }
+    cerr << "Compiled Vertex Shader" << endl;
 
     // Creates, Sources, and Compiles the Fragment Shader
     fragShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -604,15 +596,16 @@ void set_shading_model() {
             glDeleteShader(fragShader); // Don't leak the shader.
             return;
     }
+    cerr << "Compiled Fragment Shader" << endl;
     
     // Creates the Shader Program, Attaches the Shaders, and Links it for use
+    shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertShader);
     glAttachShader(shaderProgram, fragShader);
+    cerr << "Attached Shaders to Program" << endl;
+
     glLinkProgram(shaderProgram);
-
-
-
-
+    cerr << "Linked Program" << endl;
 
 
     // DELETE LATER
@@ -757,7 +750,7 @@ Quarternion multiplyQuarternion(Quarternion qa, Quarternion qb)
 
 void applyArcBallRotation(void) 
 {
-    Quarternion q = multiplyQuarternion(curr_rotation, last_rotation);
+    Quarternion q = multiplyQuarternion(last_rotation, curr_rotation);
     GLfloat rot[16];
 
     rot[0] = 1.0f - 2.0f * q.im.y * q.im.y - 2.0f * q.im.z * q.im.z;
@@ -1337,7 +1330,7 @@ void mouse_pressed(int button, int state, int x, int y)
      */
     else if(button == GLUT_LEFT_BUTTON && state == GLUT_UP)
     {
-        last_rotation = multiplyQuarternion(curr_rotation, last_rotation);
+        last_rotation = multiplyQuarternion(last_rotation, curr_rotation);
         curr_rotation = getIdentityQuarternion();
 
         /* Mouse is no longer being pressed, so set our indicator to false.

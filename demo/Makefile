@@ -1,5 +1,5 @@
 CC = g++
-FLAGS = -g
+FLAGS = -g -std=c++17
 
 INCLUDE = -I/usr/X11R6/include -I/usr/include/GL -I/usr/include
 LIBDIR = -L/usr/X11R6/lib -L/usr/local/lib
