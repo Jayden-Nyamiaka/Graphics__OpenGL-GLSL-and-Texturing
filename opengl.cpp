@@ -570,7 +570,6 @@ void set_shading_model() {
         glDeleteShader(vertShader); // Don't leak the shader.
         return;
    }
-    cerr << "Compiled Vertex Shader" << endl;
 
     // Creates, Sources, and Compiles the Fragment Shader
     fragShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -596,20 +595,13 @@ void set_shading_model() {
             glDeleteShader(fragShader); // Don't leak the shader.
             return;
     }
-    cerr << "Compiled Fragment Shader" << endl;
     
     // Creates the Shader Program, Attaches the Shaders, and Links it for use
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertShader);
     glAttachShader(shaderProgram, fragShader);
-    cerr << "Attached Shaders to Program" << endl;
-
     glLinkProgram(shaderProgram);
-    cerr << "Linked Program" << endl;
 
-
-    // DELETE LATER
-    cerr << "Enabling fragment program: " << gluErrorString(glGetError()) << endl;
     // Outputs Error Info Log for the Shader Program if an error has occurred
     char error_buffer[1024];
     GLsizei error_blah;
@@ -617,7 +609,6 @@ void set_shading_model() {
     cerr << error_buffer;
 
     // Tells OpenGL to use our Shader Program
-    cerr << "Enabling program object" << endl;
     glUseProgram(shaderProgram);
 
     /* TEXTURE STUFF - WE"LL DO LATER */
