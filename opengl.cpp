@@ -1,58 +1,12 @@
-/* CS/CNS 171
- * Written by Kevin (Kevli) Li (Class of 2016)
- * Originally for Fall 2014
- *
- * This OpenGL demo code is supposed to introduce you to the OpenGL syntax and
- * to good coding practices when writing programs in OpenGL.
- *
- * The example syntax and code organization in this file should hopefully be
- * good references for you to write your own OpenGL code.
- *
- * The advantage of OpenGL is that it turns a lot of complicated procedures
- * (such as the lighting and shading computations in Assignment 2) into simple
- * calls to built-in library functions. OpenGL also provides an easy way to
- * make mouse and keyboard user interfaces, allowing you to make programs that
- * actually let you interact with the graphics instead of just generating
- * static images. OpenGL is in general a nice tool for when you want to make a
- * quick-and-dirty graphics program.
- *
- * Keep in mind that this demo code uses OpenGL 3.0. 3.0 is not the newest
- * version of OpenGL, but it is stable; and it contains all the necessary
- * functionality for this class. Most of the syntax in 3.0 carries over to
- * the newer versions, so you should still be able to use more modern OpenGL
- * without too much difficulty after this class. The main difference between
- * 3.0 and the newer versions is that 3.0 depends on glut, which has been
- * deprecated on Mac OS.
- *
- * This demo does not cover the OpenGL Shading Language (GLSL for short).
- * GLSL will be covered in a future demo and assignment.
- *
- * Note that if you are looking at this code before having completed
- * Assignments 1 and 2, then you will probably have a hard time understanding
- * a lot of what is going on.
- *
- * The overall idea of what this program does is given on the
- * "System Recommendations and Installation Instructions" page of the class
- * website.
- */
- 
+ /* Libraries needed for OpenGl and GLSL */
+#define GL_GLEXT_PROTOTYPES 1
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glut.h>
 
-/* The following 2 headers contain all the main functions, data structures, and
- * variables that allow for OpenGL development.
- */
-//#include <GL/glew.h>
-
-/* You will almost always want to include the math library. For those that do
- * not know, the '_USE_MATH_DEFINES' line allows you to use the syntax 'M_PI'
- * to represent pi to double precision in C++. OpenGL works in degrees for
- * angles, so converting between degrees and radians is a common task when
- * working in OpenGL.
- *
- * Besides the use of 'M_PI', the trigometric functions also show up a lot in
- * graphics computations.
- */
-#include <math.h>
+/* Libraries essential for basic calculations */
 #define _USE_MATH_DEFINES
+#include <math.h>
 
 /* Standard libraries that are just generally useful. */
 #include <cstdlib>
@@ -70,12 +24,6 @@
 #include <Eigen/Dense>
 using Eigen::Vector3f;
 using Eigen::Matrix4f;
-
-/* Libraries needed for GLSL */
-#define GL_GLEXT_PROTOTYPES 1
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
 
 using namespace std;
 
@@ -95,11 +43,14 @@ void display(void);
 void init_lights();
 void set_shading_model();
 void set_lights();
+void draw_texture_square();
 void draw_objects();
 
 void mouse_pressed(int button, int state, int x, int y);
 void mouse_moved(int x, int y);
 void key_pressed(unsigned char key, int x, int y);
+
+extern GLenum readpng(const char *filename);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -299,13 +250,6 @@ Quarternion curr_rotation;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-/* Variable that tracks the shader program (if overriding default shader)
- * Not used during Gouraud Shading - default shader uses Gouraud Shading 
- */
-GLenum shaderProgram;
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
 /* The following are parameters for creating an interactive first-person camera
  * view of the scene. The variables will make more sense when explained in
  * context, so you should just look at the 'mousePressed', 'mouseMoved', and
@@ -327,10 +271,19 @@ bool wireframe_mode = false;
 /* The following parameters control different renderings through GLSL
 */
 
-// 0: Gouraud   /   1: Phong   /   2: Texture
-int mode;
+enum render_mode {
+    gouraud = 0,
+    phong = 1,
+    texture = 2
+};
 
+render_mode mode;
+const int texturePixelDimension = 800;
 
+GLenum shaderProgram;
+GLenum colorTexture, normalMapTexture;
+
+GLint tangentUniformVector;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -373,8 +326,12 @@ void parseFormatFile(string filename);
  */
 void init(string filename)
 {
-    /* Extracts all information from format file entered in command line */
-    parseFormatFile(filename);
+    if (mode == texture) {
+        hardcodeSceneConstants();
+    } else {
+        /* Extracts all information from format file entered in command line */
+        parseFormatFile(filename);
+    }
 
     /* Rotation Quarternion Initializations */
     last_rotation = getIdentityQuarternion();
@@ -417,13 +374,15 @@ void init(string filename)
      */
     glEnable(GL_NORMALIZE);
     
-    /* The following two lines tell OpenGL to enable its "vertex array" and
-     * "normal array" functionality. More details on these arrays are given
-     * in the comments on the 'Object' struct and the 'draw_objects' and
-     * 'create_objects' functions.
-     */
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
+    if (mode != texture) {
+        /* The following two lines tell OpenGL to enable its "vertex array" and
+        * "normal array" functionality. More details on these arrays are given
+        * in the comments on the 'Object' struct and the 'draw_objects' and
+        * 'create_objects' functions.
+        */
+        glEnableClientState(GL_VERTEX_ARRAY);
+        glEnableClientState(GL_NORMAL_ARRAY);
+    }
     
     /* The next 4 lines work with OpenGL's two main matrices: the "Projection
      * Matrix" and the "Modelview Matrix". Only one of these two main matrices
@@ -494,7 +453,7 @@ void init(string filename)
 
 void set_shading_model() {
     // Gouraud Shading can easily be set bc its the default shading model for OpenGL 
-    if (mode == 0) {
+    if (mode == gouraud) {
         /* The following line of code tells OpenGL to use "smooth shading" (aka
         * Gouraud shading) when rendering.
         *
@@ -516,7 +475,7 @@ void set_shading_model() {
     
     // Selects the shaders based on the mode (either Phong Shading or Texture Mapping)
     string vertProgramFilename, fragProgramFilename;
-    if (mode == 1) {
+    if (mode == phong) {
         vertProgramFilename = "phongVertexProgram.glsl";
         fragProgramFilename = "phongFragmentProgram.glsl";
     } else {
@@ -610,23 +569,21 @@ void set_shading_model() {
 
     // Tells OpenGL to use our Shader Program
     glUseProgram(shaderProgram);
+    
+    // Sets and binds textures for Texture and Normal Mapping
+    if (mode == texture) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, colorTexture);
 
-    /* TEXTURE STUFF - WE"LL DO LATER */
-    // TODO: TEXTURE STUFF
-    /*
-    leafUniformPos = glGetUniformLocation(shaderProgram, "leaf");
-    skyUniformPos = glGetUniformLocation(shaderProgram, "sky");
-    tUniformPos = glGetUniformLocation(shaderProgram, "t");
-    toggleUniformPos = glGetUniformLocation(shaderProgram, "toggle");
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, normalMapTexture);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, skyTex);
-    glUniform1i(skyUniformPos, 0);
+        tangentUniformVector = glGetUniformLocation(shaderProgram, "tangent");
+        glUniform4f(tangentUniformVector, 1.0, 0.0, 0.0, 1.0);
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, leafTex);
-    glUniform1i(leafUniformPos, 1);
-    */
+        /*glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glTexCoordPointer(2, GL_FLOAT, 0, need a const void *pointer here if using);*/
+    }
 }
 
 /* 'reshape' function:
@@ -902,14 +859,19 @@ void display(void)
      * the code more organized.
      */
     set_lights();
-    /* Once the lights are set, we can specify the points and faces that we
-     * want drawn. We do all this in our 'draw_objects' helper function. See
-     * the function for more details.
-     *
-     * The reason we have this procedure as a separate function is to make
-     * the code more organized.
-     */
-    draw_objects();
+
+    if (mode == texture) {
+        draw_texture_square();
+    } else {
+        /* Once the lights are set, we can specify the points and faces that we
+        * want drawn. We do all this in our 'draw_objects' helper function. See
+        * the function for more details.
+        *
+        * The reason we have this procedure as a separate function is to make
+        * the code more organized.
+        */
+        draw_objects();
+    }
     
     /* The following line of code has OpenGL do what is known as "double
      * buffering".
@@ -1050,6 +1012,23 @@ void set_lights()
         
         glLightfv(light_id, GL_POSITION, lights[i].position);
     }
+}
+
+/* Draws the flat square for texture rendering 
+ * Equivalent to draw_objects but for texture rendering 
+ */
+void draw_texture_square()
+{
+    glPushMatrix();
+
+    glBegin(GL_LINES);
+    glVertex3f(-5,0,0);
+    glVertex3f(5,0,0);
+    glVertex3f(0,-5,0);
+    glVertex3f(0,5,0);
+    glEnd();
+
+    glPopMatrix();
 }
 
 /* 'draw_objects' function:
@@ -1268,19 +1247,6 @@ void draw_objects()
          */
         glPopMatrix();
     }
-    
-    
-    /* The following code segment uses OpenGL's built-in sphere rendering
-     * function to render the blue-ground that you are walking on when
-     * you run the program. The blue-ground is just the surface of a big
-     * sphere of radius 100.
-     */
-    glPushMatrix();
-    {
-        glTranslatef(0, -103, 0);
-        glutSolidSphere(100, 100, 100);
-    }
-    glPopMatrix();
 }
 
 /* 'mouse_pressed' function:
@@ -1547,6 +1513,26 @@ void parseObjFile(string filename, Object &obj)
     file.close();
 }
 
+void hardcodeSceneConstants()
+{
+    cam_position = {0,0f, 0.0f, 0.0f};
+    cam_orientation_axis = {0.0f, 1.0f, 0.0f};
+    cam_orientation_angle = 0.0;
+
+    near_param = 1.0f;
+    far_param = 10.0f;
+    left_param = -1.0f;
+    right_param = 1.0f;
+    top_param = 1.0f;
+    bottom_param = -1.0f;
+
+    Point_Light light;
+    light.position = {7.0f, 2.0f, 3.0f, 1.0f};
+    light.color = {1.0f, 1.0f, 1.0f};
+    light.attenuation_k = 0.5f;    
+    lights.push_back(light);
+}
+
 /** 
  * Populates all global fields not already filled with information extracted 
  * by parsing the format file that was entered in the command line.
@@ -1747,16 +1733,21 @@ int main(int argc, char* argv[])
 
     int xres, yres;
     if (argc == 3) {
-        xres = 800;
-        yres = 800;
-        mode = 2;
+        xres = texturePixelDimension;
+        yres = texturePixelDimension;
+        mode = texture;
+        if(!(colorTexture = readpng(argv[1])))
+            exit(1);
+        if(!(normalMapTexture = readpng(argv[2])))
+            exit(1);
     } else {
         xres = stoi(argv[2]);
         yres = stoi(argv[3]);
-        mode = stoi(argv[4]);
-        if (xres <= 0 || yres <= 0 || (mode != 0 && mode != 1)) {
+        int entered_mode = stoi(argv[4]);
+        if (xres <= 0 || yres <= 0 || (entered_mode != 0 && entered_mode != 1)) {
             usage(argv[0]);
         }
+        mode = render_mode(entered_mode);
     }
     
 

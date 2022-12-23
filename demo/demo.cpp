@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
 
    glutInitWindowSize(xres, yres);
    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-   glutCreateWindow("GLSL test");
+   glutCreateWindow("GLSL demo");
 
    initGL();
 

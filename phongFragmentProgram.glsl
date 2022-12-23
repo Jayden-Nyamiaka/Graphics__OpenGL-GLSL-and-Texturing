@@ -18,7 +18,7 @@ void main()
     for (int i = 0; i < gl_MaxLights; i++) {
         // Gets the position and direction of the light source
         vec3 light_position = gl_LightSource[i].position.xyz;
-        vec3 light_direction = normalize( - camera_space_position);
+        vec3 light_direction = normalize(light_position - camera_space_position);
 
         // Compute the attenutation factor
         float xDif = (camera_space_position[0] - light_position[0]);
