@@ -1,4 +1,4 @@
-uniform sampler2D colorTexture
+uniform sampler2D colorTexture;
 uniform sampler2D normalMap;
 
 varying vec3 camera_space_pixel_pos;
@@ -10,10 +10,10 @@ const float material_shininess = 0.2;
 void main()
 {    
     // Loads the material color from the color texture
-    vec4 material_color = texture2D(colorTexture, glTexCoord[0].st);
+    vec4 material_color = texture2D(colorTexture, gl_TexCoord[0].st);
 
     // Loads the normal from normal map texture RGB value
-    vec4 normal = texture2D(colorTexture, glTexCoord[1].st).rgb;
+    vec3 normal = texture2D(colorTexture, gl_TexCoord[1].st).rgb;
     
     // Map normal components [0, 1] -> [-1, 1]
     normal = 2.0 * normal - 1.0;
@@ -60,5 +60,5 @@ void main()
                              0.0, 1.0);
     
     // Sets the color of the pixel to our computed color
-    gl_FragColor = vec4(final_color, 1.0);
+    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 }

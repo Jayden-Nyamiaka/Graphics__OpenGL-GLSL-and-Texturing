@@ -25,6 +25,8 @@ static GLint leafUniformPos, skyUniformPos;
 static GLint tUniformPos, toggleUniformPos;
 static GLuint displayList;
 
+static string directory;
+
 float toggle = 1.0; // toggle variable for normal modes; per-vertex vs per-fragment
 
 static double clip(double x, double a, double b) {
@@ -47,19 +49,19 @@ static void initGL() {
    glEnable(GL_DEPTH_TEST);
 
    cerr << "Loading textures" << endl;
-   if(!(skyTex = readpng("sky.png")))
+   if(!(skyTex = readpng( (directory + "sky.png").c_str() )))
       exit(1);
-   if(!(leafTex = readpng("leaf.png")))
+   if(!(leafTex = readpng( (directory + "leaf.png").c_str() )))
       exit(1);
 }
 
 static void readShaders() {
    string vertProgramSource, fragProgramSource;
    
-   ifstream vertProgFile(vertProgFileName.c_str());
+   ifstream vertProgFile( (directory + vertProgFileName).c_str() );
    if (! vertProgFile)
       cerr << "Error opening vertex shader program\n";
-   ifstream fragProgFile(fragProgFileName.c_str());
+   ifstream fragProgFile( (directory + fragProgFileName).c_str() );
    if (! fragProgFile)
       cerr << "Error opening fragment shader program\n";
 
@@ -259,6 +261,9 @@ int main(int argc, char *argv[]) {
    if (xres <= 0 || yres <= 0) {
       usage(argv[0]);
    }
+
+   directory = argv[0];
+   directory.erase(directory.find_last_of('/') + 1);
 
    glutInitWindowSize(xres, yres);
    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);

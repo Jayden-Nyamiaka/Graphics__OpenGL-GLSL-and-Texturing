@@ -9,16 +9,17 @@ LIBS = -lGLEW -lGL -lGLU -lglut -lm -lpng
 opengl: opengl.cpp readpng.cpp
 	$(CC) $(FLAGS) -o opengl $(INCLUDE) $(LIBDIR) opengl.cpp readpng.cpp $(LIBS)
 
-glslRenderer: demo/demo.cpp readpng.cpp
-	$(CC) $(FLAGS) -o demoRenderer $(INCLUDE) $(LIBDIR) demo/demo.cpp readpng.cpp $(LIBS)
+
+demo: ./demo/demo.cpp readpng.cpp
+	$(CC) $(FLAGS) -o demo/demoRenderer $(INCLUDE) $(LIBDIR) demo/demo.cpp readpng.cpp $(LIBS)
+
+run_demo: demo
+	./demo/demoRenderer 800 800
 
 clean:
-	rm -f *.o opengl demoRenderer core
-
-run_demo:
-	.demoRenderer 800 800
+	rm -f *.o opengl demo/demoRenderer
 
 all: clean opengl
 
-.PHONY: clean run_demo sll
+.PHONY: clean all
 

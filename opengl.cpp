@@ -43,12 +43,17 @@ void display(void);
 void init_lights();
 void set_shading_model();
 void set_lights();
+
 void draw_texture_square();
 void draw_objects();
+void draw_ground_sphere();
 
 void mouse_pressed(int button, int state, int x, int y);
 void mouse_moved(int x, int y);
 void key_pressed(unsigned char key, int x, int y);
+
+void parseFormatFile(string filename);
+void hardcodeSceneConstants();
 
 extern GLenum readpng(const char *filename);
 
@@ -282,18 +287,6 @@ const int texturePixelDimension = 800;
 
 GLenum shaderProgram;
 GLenum colorTexture, normalMapTexture;
-
-GLint tangentUniformVector;
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-/* The following function prototypes are for helper functions that parse the given 
- * format file to extract all the scene data and populate our map of objects.
- *
- * Details of the function will be given in its implementation further below.
- */
-
-void parseFormatFile(string filename);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -577,9 +570,6 @@ void set_shading_model() {
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, normalMapTexture);
-
-        tangentUniformVector = glGetUniformLocation(shaderProgram, "tangent");
-        glUniform4f(tangentUniformVector, 1.0, 0.0, 0.0, 1.0);
 
         /*glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         glTexCoordPointer(2, GL_FLOAT, 0, need a const void *pointer here if using);*/
@@ -872,6 +862,7 @@ void display(void)
         */
         draw_objects();
     }
+    draw_ground_sphere();
     
     /* The following line of code has OpenGL do what is known as "double
      * buffering".
@@ -1249,6 +1240,21 @@ void draw_objects()
     }
 }
 
+/* The following code segment uses OpenGL's built-in sphere rendering
+* function to render the blue-ground that you are walking on when
+* you run the program. The blue-ground is just the surface of a big
+* sphere of radius 100.
+*/
+void draw_ground_sphere() 
+{
+    glPushMatrix();
+    {
+        glTranslatef(0, -103, 0);
+        glutSolidSphere(100, 100, 100);
+    }
+    glPopMatrix();
+}
+
 /* 'mouse_pressed' function:
  * 
  * This function is meant to respond to mouse clicks and releases. The
@@ -1515,8 +1521,14 @@ void parseObjFile(string filename, Object &obj)
 
 void hardcodeSceneConstants()
 {
-    cam_position = {0,0f, 0.0f, 0.0f};
-    cam_orientation_axis = {0.0f, 1.0f, 0.0f};
+    cam_position[0] = 0.0f;
+    cam_position[1] = 0.0f;
+    cam_position[2] = 0.0f;
+
+    cam_orientation_axis[0] = 0.0f;
+    cam_orientation_axis[1] = 1.0f;
+    cam_orientation_axis[2] = 0.0f;
+
     cam_orientation_angle = 0.0;
 
     near_param = 1.0f;
@@ -1527,9 +1539,18 @@ void hardcodeSceneConstants()
     bottom_param = -1.0f;
 
     Point_Light light;
-    light.position = {7.0f, 2.0f, 3.0f, 1.0f};
-    light.color = {1.0f, 1.0f, 1.0f};
-    light.attenuation_k = 0.5f;    
+
+    light.position[0] = 7.0f;
+    light.position[1] = 2.0f;
+    light.position[2] = 3.0f;
+    light.position[3] = 1.0f;
+
+    light.color[0] = 1.0f;
+    light.color[1] = 1.0f;
+    light.color[2] = 1.0f;
+
+    light.attenuation_k = 0.5f; 
+
     lights.push_back(light);
 }
 
