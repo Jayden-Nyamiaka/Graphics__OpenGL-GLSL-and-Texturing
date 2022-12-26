@@ -23,11 +23,9 @@ void main()
 
     // In camera space, the camera's position is centered at the origin
     // so the camera's direction is just the negative vertex position
-    vec3 camera_direction = normalize(-1.0 * camera_space_pixel_pos);
+    vec3 camera_direction = normalize(-1.0 * vec3(0, 0, 0));
 
     // TRY USING 0 FOR THE PIXEL_POS that would make line 30 light direction = remove camera_space_pixel_pos bc it equals 0
-
-
 
     // Gets the direction of the light source
     vec3 light_direction = normalize(surface_space_light_pos - camera_space_pixel_pos);
@@ -60,5 +58,7 @@ void main()
                              0.0, 1.0);
     
     // Sets the color of the pixel to our computed color
-    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    gl_FragColor = vec4(final_color, 1.0);
 }
+
+

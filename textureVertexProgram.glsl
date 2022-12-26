@@ -12,7 +12,7 @@ void main()
     camera_space_pixel_pos = (gl_ModelViewMatrix * gl_Vertex).xyz; //maybe use gl_Position
 
     // Assumes the world space tangent along the (+u) direction
-    vec3 world_space_tangent = vec3(1.0, 0.0, 0.0); // maybe w = 0.0 AND/OR normalize
+    vec3 world_space_tangent = vec3(1.0, 0.0, 0.0);
 
     // TBN matrix converts from camera space to surface space (vecs in camera space)
     // First transforms the normal and tangent vecs from world space to camera space

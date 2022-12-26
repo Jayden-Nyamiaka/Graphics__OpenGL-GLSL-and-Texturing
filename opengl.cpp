@@ -926,6 +926,10 @@ void init_lights()
      * Phong reflection model or lighting model to every pixel it will render.
      */
     glEnable(GL_LIGHTING);
+
+    if (mode == texture) {
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
+    }
     
     int num_lights = lights.size();
     
@@ -1012,11 +1016,11 @@ void draw_texture_square()
 {
     glPushMatrix();
 
-    glBegin(GL_LINES);
-    glVertex3f(-5,0,0);
-    glVertex3f(5,0,0);
-    glVertex3f(0,-5,0);
-    glVertex3f(0,5,0);
+    glBegin(GL_POLYGON);
+    glVertex3f(-2,-2,0);
+    glVertex3f(2,-2,0);
+    glVertex3f(2,2,0);
+    glVertex3f(-2,2,0);
     glEnd();
 
     glPopMatrix();
@@ -1523,7 +1527,7 @@ void hardcodeSceneConstants()
 {
     cam_position[0] = 0.0f;
     cam_position[1] = 0.0f;
-    cam_position[2] = 0.0f;
+    cam_position[2] = 5.0f;
 
     cam_orientation_axis[0] = 0.0f;
     cam_orientation_axis[1] = 1.0f;
@@ -1532,7 +1536,7 @@ void hardcodeSceneConstants()
     cam_orientation_angle = 0.0;
 
     near_param = 1.0f;
-    far_param = 10.0f;
+    far_param = 15.0f;
     left_param = -1.0f;
     right_param = 1.0f;
     top_param = 1.0f;
