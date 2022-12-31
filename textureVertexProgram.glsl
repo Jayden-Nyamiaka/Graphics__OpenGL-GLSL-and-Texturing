@@ -1,5 +1,5 @@
 varying vec3 camera_space_pixel_pos;
-varying vec3 surface_space_light_pos;
+varying mat3 tbn_matrix;
 
 void main()
 {
@@ -20,8 +20,6 @@ void main()
     vec3 tangent = normalize( gl_NormalMatrix * world_space_tangent ); // maybe no mutliplixation by normalMatrix
     vec3 bitangent = normalize( cross(normal, tangent) );
     mat3 tbn_matrix = mat3(tangent, bitangent, normal);
-
-    surface_space_light_pos = tbn_matrix /*maybe * gl_ViewMatrix*/ * gl_LightSource[0].position.xyz;
 
     gl_Position = ftransform();
 }
