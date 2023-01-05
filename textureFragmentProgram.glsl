@@ -13,7 +13,7 @@ void main()
     vec3 material_color = texture2D(colorTexture, gl_TexCoord[0].st).xyz;
 
     // Loads the normal from normal map texture RGB value
-    vec3 normal = texture2D(normalMap, gl_TexCoord[0].st).rgb; // maybe 1 here or change the vertex shader to 0
+    vec3 normal = texture2D(normalMap, gl_TexCoord[0].st).rgb;
     
     // Map normal components [0, 1] -> [-1, 1]
     normal = 2.0 * normal - 1.0;
@@ -21,14 +21,11 @@ void main()
     // Re-normalize normal vector
     normal = normalize(normal);
 
-    // In camera space, the camera's position is centered at the origin
-    // so the camera's direction is just the negative vertex position
-    vec3 camera_direction = normalize(tbn_matrix * (- camera_space_pixel_pos));
+    // Gets the camera direction in surface space
+    vec3 camera_direction = normalize(tbn_matrix * (-1.0 * camera_space_pixel_pos));
 
-    // TRY USING 0 FOR THE PIXEL_POS that would make line 30 light direction = remove camera_space_pixel_pos bc it equals 0
-
-    // Gets the direction of the light source
-    vec3 light_direction = normalize(tbn_matrix * (gl_LightSource[0].position - camera_space_pixel_pos));
+    // Gets the direction of the light source in surface space
+    vec3 light_direction = normalize(tbn_matrix * (gl_LightSource[0].position.xyz - camera_space_pixel_pos));
 
     // No attenuation this time
 
@@ -42,12 +39,8 @@ void main()
         max(0.0, dot(normal, combined_direction)), material_shininess);
     vec3 specular_component = specular_factor * gl_LightSource[0].specular.xyz;
     
-    // Combines ambient, diffuse, and specular reflection 
-    // and fixes the rgb values btwn 0 and 1
-    vec3 final_color = clamp(material_color + 
-                             material_color * diffuse_component + 
-                             material_color * specular_component,
-                             0.0, 1.0);
+    // Adds components (no ambient), multiplies by material color, and fixes values to [0,1] for final color
+    vec3 final_color = clamp(material_color * (diffuse_component + specular_component), 0.0, 1.0);
     
     // Sets the color of the pixel to our computed color
     gl_FragColor = vec4(final_color, 1.0);
