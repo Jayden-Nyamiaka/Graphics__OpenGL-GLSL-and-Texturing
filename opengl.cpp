@@ -241,10 +241,13 @@ float near_param, far_param,
 /* Self-explanatory lists of lights and map of objects.
  */
 
+static const string TEXTURE_CUBE_PATH = "data/cube.obj";
 /* All the lights in the scene */
 vector<Point_Light> lights;
-/* All the objects mapped by name (filename) */
+/* All the objects mapped by name used for Base Rendering */
 map<string, Object> objects;
+/* Cube object used for Texture Tendering */
+Object texture_cube;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -367,15 +370,13 @@ void init(string filename)
      */
     glEnable(GL_NORMALIZE);
     
-    if (mode != texture) {
-        /* The following two lines tell OpenGL to enable its "vertex array" and
-        * "normal array" functionality. More details on these arrays are given
-        * in the comments on the 'Object' struct and the 'draw_objects' and
-        * 'create_objects' functions.
-        */
-        glEnableClientState(GL_VERTEX_ARRAY);
-        glEnableClientState(GL_NORMAL_ARRAY);
-    }
+    /* The following two lines tell OpenGL to enable its "vertex array" and
+    * "normal array" functionality. More details on these arrays are given
+    * in the comments on the 'Object' struct and the 'draw_objects' and
+    * 'create_objects' functions.
+    */
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
     
     /* The next 4 lines work with OpenGL's two main matrices: the "Projection
      * Matrix" and the "Modelview Matrix". Only one of these two main matrices
@@ -571,8 +572,21 @@ void set_shading_model() {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, normalMapTexture);
 
-        /*glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glTexCoordPointer(2, GL_FLOAT, 0, need a const void *pointer here if using);*/
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        std::vector<float> tex_arr;
+        tex_arr.push_back(0.0);
+        tex_arr.push_back(0.0);
+        tex_arr.push_back(1.0);
+        tex_arr.push_back(0.0);
+        tex_arr.push_back(1.0);
+        tex_arr.push_back(1.0);
+        tex_arr.push_back(0.0);
+        tex_arr.push_back(0.0);
+        tex_arr.push_back(1.0);
+        tex_arr.push_back(1.0);
+        tex_arr.push_back(0.0);
+        tex_arr.push_back(1.0);
+        glTexCoordPointer(2, GL_FLOAT, 0, &tex_arr[0]);
     }
 }
 
@@ -862,6 +876,7 @@ void display(void)
         */
         draw_objects();
     }
+    // Remove this later
     draw_ground_sphere();
     
     /* The following line of code has OpenGL do what is known as "double
@@ -962,7 +977,9 @@ void init_lights()
          * are used to only working with one overall light color, we will
          * just set every component to the light color.
          */
-        glLightfv(light_id, GL_AMBIENT, lights[i].color);
+        if (mode != texture) {
+            glLightfv(light_id, GL_AMBIENT, lights[i].color);
+        }
         glLightfv(light_id, GL_DIFFUSE, lights[i].color);
         glLightfv(light_id, GL_SPECULAR, lights[i].color);
         
@@ -974,6 +991,11 @@ void init_lights()
          * parameter of 'glLightf' is just a float instead of a float*.
          */
         glLightf(light_id, GL_QUADRATIC_ATTENUATION, lights[i].attenuation_k);
+    }
+
+    // Models ambient light for the whole model
+    if (mode == texture) {
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lights[0].color);
     }
 }
 
@@ -1016,13 +1038,18 @@ void draw_texture_square()
 {
     glPushMatrix();
 
-    glBegin(GL_POLYGON);
-    glVertex3f(-2,-2,0);
-    glVertex3f(2,-2,0);
-    glVertex3f(2,2,0);
-    glVertex3f(-2,2,0);
-    glEnd();
+    float white_light[3] = {1.0f, 1.0f, 1.0f};
+    float shininess = 0.2;
 
+    glMaterialfv(GL_FRONT, GL_AMBIENT, white_light);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, white_light);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, white_light);
+    glMaterialf(GL_FRONT, GL_SHININESS, shininess);
+
+    glVertexPointer(3, GL_FLOAT, 0, &texture_cube.vertex_buffer[0]);
+    glNormalPointer(GL_FLOAT, 0, &texture_cube.normal_buffer[0]);
+
+    glDrawArrays(GL_TRIANGLES, 0, texture_cube.vertex_buffer.size());
     glPopMatrix();
 }
 
@@ -1556,6 +1583,8 @@ void hardcodeSceneConstants()
     light.attenuation_k = 0.5f; 
 
     lights.push_back(light);
+
+    parseObjFile(TEXTURE_CUBE_PATH, texture_cube);
 }
 
 /** 
@@ -1668,9 +1697,9 @@ void parseFormatFile(string filename)
 
         /* If the current object is empty, we are ready to read in a instance.
 
-         * In our scene, each object (in objects map) only acts as a template
-         * and uses instances to describe specific modifications of itself
-         * that actually get rendered to the screen.
+         * In our basic rendering scene, each object (in the objects map) 
+         * only acts as a template and uses instances to describe specific 
+         * modifications of itself that actually get rendered to the screen.
          * 
          * In the format file, the start of an instance is indicated via:
          *      [object name] [object filename]
