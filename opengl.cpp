@@ -44,16 +44,13 @@ void init_lights();
 void set_shading_model();
 void set_lights();
 
-void draw_texture_square();
 void draw_objects();
-void draw_ground_sphere();
 
 void mouse_pressed(int button, int state, int x, int y);
 void mouse_moved(int x, int y);
 void key_pressed(unsigned char key, int x, int y);
 
 void parseFormatFile(string filename);
-void hardcodeSceneConstants();
 
 extern GLenum readpng(const char *filename);
 
@@ -241,13 +238,11 @@ float near_param, far_param,
 /* Self-explanatory lists of lights and map of objects.
  */
 
-static const string TEXTURE_CUBE_PATH = "data/cube.obj";
+static const string SCENE_TEXTURE_PATH = "data/scene_texture.txt";
 /* All the lights in the scene */
 vector<Point_Light> lights;
 /* All the objects mapped by name used for Base Rendering */
 map<string, Object> objects;
-/* Cube object used for Texture Tendering */
-Object texture_cube;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -322,12 +317,8 @@ GLenum colorTexture, normalMapTexture;
  */
 void init(string filename)
 {
-    if (mode == texture) {
-        hardcodeSceneConstants();
-    } else {
-        /* Extracts all information from format file entered in command line */
-        parseFormatFile(filename);
-    }
+    /* Extracts scene information from the appropriate format file */
+    parseFormatFile(filename);
 
     /* Rotation Quarternion Initializations */
     last_rotation = getIdentityQuarternion();
@@ -532,7 +523,7 @@ void set_shading_model() {
     // Provides Error Checking and Output in case the Fragment Shader didn't Compile
     isCompiled = 0;
     glGetShaderiv(fragShader, GL_COMPILE_STATUS, &isCompiled);
-    if(isCompiled == GL_FALSE)
+    if (isCompiled == GL_FALSE)
     {
             GLint maxLength = 0;
             glGetShaderiv(fragShader, GL_INFO_LOG_LENGTH, &maxLength);
@@ -572,6 +563,7 @@ void set_shading_model() {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, normalMapTexture);
 
+        // Manually encodes Texture Coordinates
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         std::vector<float> tex_arr;
         tex_arr.push_back(0.0);
@@ -589,6 +581,7 @@ void set_shading_model() {
         glTexCoordPointer(2, GL_FLOAT, 0, &tex_arr[0]);
     }
 }
+
 
 /* 'reshape' function:
  * 
@@ -864,20 +857,14 @@ void display(void)
      */
     set_lights();
 
-    if (mode == texture) {
-        draw_texture_square();
-    } else {
-        /* Once the lights are set, we can specify the points and faces that we
-        * want drawn. We do all this in our 'draw_objects' helper function. See
-        * the function for more details.
-        *
-        * The reason we have this procedure as a separate function is to make
-        * the code more organized.
-        */
-        draw_objects();
-    }
-    // Remove this later
-    draw_ground_sphere();
+    /* Once the lights are set, we can specify the points and faces that we
+    * want drawn. We do all this in our 'draw_objects' helper function. See
+    * the function for more details.
+    *
+    * The reason we have this procedure as a separate function is to make
+    * the code more organized.
+    */
+    draw_objects();
     
     /* The following line of code has OpenGL do what is known as "double
      * buffering".
@@ -942,9 +929,9 @@ void init_lights()
      */
     glEnable(GL_LIGHTING);
 
-    if (mode == texture) {
+    /*if (mode == texture) {
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
-    }
+    }*/
     
     int num_lights = lights.size();
     
@@ -1031,27 +1018,6 @@ void set_lights()
     }
 }
 
-/* Draws the flat square for texture rendering 
- * Equivalent to draw_objects but for texture rendering 
- */
-void draw_texture_square()
-{
-    glPushMatrix();
-
-    float white_light[3] = {1.0f, 1.0f, 1.0f};
-    float shininess = 0.2;
-
-    glMaterialfv(GL_FRONT, GL_AMBIENT, white_light);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, white_light);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, white_light);
-    glMaterialf(GL_FRONT, GL_SHININESS, shininess);
-
-    glVertexPointer(3, GL_FLOAT, 0, &texture_cube.vertex_buffer[0]);
-    glNormalPointer(GL_FLOAT, 0, &texture_cube.normal_buffer[0]);
-
-    glDrawArrays(GL_TRIANGLES, 0, texture_cube.vertex_buffer.size());
-    glPopMatrix();
-}
 
 /* 'draw_objects' function:
  *
@@ -1271,20 +1237,6 @@ void draw_objects()
     }
 }
 
-/* The following code segment uses OpenGL's built-in sphere rendering
-* function to render the blue-ground that you are walking on when
-* you run the program. The blue-ground is just the surface of a big
-* sphere of radius 100.
-*/
-void draw_ground_sphere() 
-{
-    glPushMatrix();
-    {
-        glTranslatef(0, -103, 0);
-        glutSolidSphere(100, 100, 100);
-    }
-    glPopMatrix();
-}
 
 /* 'mouse_pressed' function:
  * 
@@ -1550,42 +1502,6 @@ void parseObjFile(string filename, Object &obj)
     file.close();
 }
 
-void hardcodeSceneConstants()
-{
-    cam_position[0] = 0.0f;
-    cam_position[1] = 0.0f;
-    cam_position[2] = 5.0f;
-
-    cam_orientation_axis[0] = 0.0f;
-    cam_orientation_axis[1] = 1.0f;
-    cam_orientation_axis[2] = 0.0f;
-
-    cam_orientation_angle = 0.0;
-
-    near_param = 1.0f;
-    far_param = 15.0f;
-    left_param = -1.0f;
-    right_param = 1.0f;
-    top_param = 1.0f;
-    bottom_param = -1.0f;
-
-    Point_Light light;
-
-    light.position[0] = 7.0f;
-    light.position[1] = 2.0f;
-    light.position[2] = 3.0f;
-    light.position[3] = 1.0f;
-
-    light.color[0] = 1.0f;
-    light.color[1] = 1.0f;
-    light.color[2] = 1.0f;
-
-    light.attenuation_k = 0.5f; 
-
-    lights.push_back(light);
-
-    parseObjFile(TEXTURE_CUBE_PATH, texture_cube);
-}
 
 /** 
  * Populates all global fields not already filled with information extracted 
@@ -1779,22 +1695,25 @@ void usage(string program_name) {
 int main(int argc, char* argv[])
 {
     /* Checks that the user inputted the right parameters into the command line
-     * and stores xres, yres, and filename to their respective fields
+     * and stores the user's parameters to their respective fields
      */
     if (argc != 5 && argc != 3) {
         usage(argv[0]);
     }
 
     int xres, yres;
+    string filename;
     if (argc == 3) {
         xres = texturePixelDimension;
         yres = texturePixelDimension;
         mode = texture;
-        if(!(colorTexture = readpng(argv[1])))
+        filename = SCENE_TEXTURE_PATH;
+        if (!(colorTexture = readpng(argv[1])))
             exit(1);
-        if(!(normalMapTexture = readpng(argv[2])))
+        if (!(normalMapTexture = readpng(argv[2])))
             exit(1);
     } else {
+        filename = argv[1];
         xres = stoi(argv[2]);
         yres = stoi(argv[3]);
         int entered_mode = stoi(argv[4]);
@@ -1832,7 +1751,7 @@ int main(int argc, char* argv[])
     
     /* Call our 'init' function...
      */
-    init(argv[1]);
+    init(filename);
     /* Specify to OpenGL our display function.
      */
     glutDisplayFunc(display);

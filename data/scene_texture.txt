@@ -1,0 +1,21 @@
+camera:
+position 0 0 5
+orientation 0 1 0 0
+near 1
+far 10
+left -0.5
+right 0.5
+top 0.5
+bottom -0.5
+
+light 0 0 5 , 1 1 1 , 0
+
+objects:
+texture_cube texture_cube.obj
+
+texture_cube
+ambient 0.2 0.2 0.2
+diffuse 0.6 0.6 0.6
+specular 0.1 0.1 0.1
+shininess 0
+t 0 0 0
