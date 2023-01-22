@@ -1,0 +1,21 @@
+Compile and Execute Instructions:
+
+    1) The run "make all" to generate the executable, which cleans before compiling.
+
+    2) To run the executable, run ./opengl scene_description_file.txt xres yres mode
+                               OR ./opengl color_texture.png normal_map.png 
+    
+    3) You can also compile and run the demo via:
+        - Compile: make demo
+        - Run: make run_demo
+                 OR ./demo/demoRenderer xres yres
+
+    4) Run "make clean" to delete any generated files.
+
+
+Notes:
+    The texture shader still doesn't work perfectly. My texture shaders have been confirmed correct; 
+    however, there is a problem somehwere on the C++ side. The code now runs displaying a white screen 
+    and distorted textures. It's clear the texture is overlaying the flat square, but it's not working 
+    correctly. I have tried looking over the code so many times, but I can't figure it out. It may be 
+    an issue with the order in which OpenGl expects things to be called.

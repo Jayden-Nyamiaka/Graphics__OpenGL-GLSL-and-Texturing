@@ -239,6 +239,8 @@ float near_param, far_param,
  */
 
 static const string SCENE_TEXTURE_PATH = "data/scene_texture.txt";
+char *color_png_path;
+char *normal_png_path;
 /* All the lights in the scene */
 vector<Point_Light> lights;
 /* All the objects mapped by name used for Base Rendering */
@@ -323,10 +325,6 @@ void init(string filename)
     /* Rotation Quarternion Initializations */
     last_rotation = getIdentityQuarternion();
     curr_rotation = getIdentityQuarternion();
-
-    /* Sets shading model to either Gouraud Shading, Phong Shading, or Texture Mapping 
-     * Equivalent to readShaders() in the Demo. */
-    set_shading_model();
     
     /* The next line of code tells OpenGL to use "culling" when rendering. The
      * line right after it tells OpenGL that the particular "culling" technique
@@ -434,6 +432,10 @@ void init(string filename)
      * the code more organized.
      */
     init_lights();
+
+    /* Sets shading model to either Gouraud Shading, Phong Shading, or Texture Mapping 
+     * Equivalent to readShaders() in the Demo. */
+    set_shading_model();
 }
 
 void set_shading_model() {
@@ -557,32 +559,12 @@ void set_shading_model() {
     
     // Sets and binds textures for Texture and Normal Mapping
     if (mode == texture) {
-        /*
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        MAYBE PUT READ PNG CALL HERE
-        
-        
-        
-        
-        
-        */
+        // Reads in texture pngs
+        if (!(colorTexture = readpng(color_png_path)))
+            exit(1);  
+        if (!(normalMapTexture = readpng(normal_png_path)))
+            exit(1);
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, colorTexture);
 
@@ -955,9 +937,9 @@ void init_lights()
      */
     glEnable(GL_LIGHTING);
 
-    /*if (mode == texture) {
+    if (mode == texture) {
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
-    }*/
+    }
     
     int num_lights = lights.size();
     
@@ -1734,6 +1716,8 @@ int main(int argc, char* argv[])
         yres = texturePixelDimension;
         mode = texture;
         filename = SCENE_TEXTURE_PATH;
+        color_png_path = argv[1];
+        normal_png_path = argv[2];
     } else {
         filename = argv[1];
         xres = stoi(argv[2]);
