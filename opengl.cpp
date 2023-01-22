@@ -557,6 +557,32 @@ void set_shading_model() {
     
     // Sets and binds textures for Texture and Normal Mapping
     if (mode == texture) {
+        /*
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        MAYBE PUT READ PNG CALL HERE
+        
+        
+        
+        
+        
+        */
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, colorTexture);
 
@@ -1708,10 +1734,6 @@ int main(int argc, char* argv[])
         yres = texturePixelDimension;
         mode = texture;
         filename = SCENE_TEXTURE_PATH;
-        if (!(colorTexture = readpng(argv[1])))
-            exit(1);
-        if (!(normalMapTexture = readpng(argv[2])))
-            exit(1);
     } else {
         filename = argv[1];
         xres = stoi(argv[2]);
@@ -1748,6 +1770,14 @@ int main(int argc, char* argv[])
     /* The following line tells OpenGL to name the program window "Test".
      */
     glutCreateWindow("Assignment 4 - Open GL");
+    
+    // Reads in texture pngs
+    if (mode == texture) {
+        if (!(colorTexture = readpng(argv[1])))
+            exit(1);
+        if (!(normalMapTexture = readpng(argv[2])))
+            exit(1);
+    }
     
     /* Call our 'init' function...
      */
